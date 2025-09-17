@@ -1,4 +1,8 @@
-##File Design Structure
+
+
+<details>
+<summary # File Design Structure </summary>
+  
 This document outlines the directory structure and design principles for the NexusPay monorepo. The goal is to create a logical, scalable, and maintainable codebase that supports our microservices architecture.
 
 1. Top-Level Directory Structure
@@ -80,6 +84,9 @@ docker-compose.yml: For setting up a complete local development environment (Pos
 terraform/: Terraform scripts for provisioning cloud infrastructure (e.g., Kubernetes clusters, databases) on AWS, GCP, or Azure.
 
 /docs/: Centralized project documentation.
+
+
+</details>
 
 api/: OpenAPI/Swagger specifications for all backend microservices.
 
