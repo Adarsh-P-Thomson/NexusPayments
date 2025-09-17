@@ -1,7 +1,7 @@
 
 
 <details>
-<summary # File Design Structure </summary>
+<summary> File Design Structure </summary>
   
 This document outlines the directory structure and design principles for the NexusPay monorepo. The goal is to create a logical, scalable, and maintainable codebase that supports our microservices architecture.
 
@@ -74,7 +74,7 @@ frontend/
 ```
 4. Shared Libraries & Infrastructure
 
-
+```
 /libs/java-common/: A shared Java library (packaged as a JAR) containing common code used by multiple backend services, such as DTOs (Data Transfer Objects), custom exceptions, and utility classes. This prevents code duplication.
 
 /infra/: Contains all Infrastructure-as-Code files.
@@ -84,7 +84,7 @@ docker-compose.yml: For setting up a complete local development environment (Pos
 terraform/: Terraform scripts for provisioning cloud infrastructure (e.g., Kubernetes clusters, databases) on AWS, GCP, or Azure.
 
 /docs/: Centralized project documentation.
-
+```
 
 </details>
 
