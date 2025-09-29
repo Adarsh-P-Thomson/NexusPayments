@@ -7,6 +7,6 @@ echo "🛑 Stopping all NexusPay services..."
 
 # Stop infrastructure services
 echo "🛑 Stopping infrastructure services..."
-docker-compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml down
 
 echo "✅ All services stopped!"

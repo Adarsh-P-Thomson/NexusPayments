@@ -4,17 +4,17 @@ echo "🎯 Starting NexusPay Backend Services..."
 
 # Set JAVA_HOME if not set
 if [ -z "$JAVA_HOME" ]; then
-    echo "⚠️  JAVA_HOME is not set. Attempting to find Java 21..."
+    echo "⚠️  JAVA_HOME is not set. Attempting to find Java 17..."
     if command -v java >/dev/null 2>&1; then
         JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-        if [ "$JAVA_VERSION" -ge 21 ]; then
+        if [ "$JAVA_VERSION" -ge 17 ]; then
             echo "✅ Found Java $JAVA_VERSION"
         else
-            echo "❌ Java 21+ is required. Found Java $JAVA_VERSION"
+            echo "❌ Java 17+ is required. Found Java $JAVA_VERSION"
             exit 1
         fi
     else
-        echo "❌ Java not found. Please install Java 21+"
+        echo "❌ Java not found. Please install Java 17+"
         exit 1
     fi
 fi

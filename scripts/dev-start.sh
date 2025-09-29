@@ -17,29 +17,29 @@ mkdir -p data/redis
 
 # Start infrastructure services
 echo "📦 Starting infrastructure services..."
-docker-compose -f infra/docker-compose.yml up -d
+docker compose -f infra/docker-compose.yml up -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."
 
 # Wait for PostgreSQL
-until docker-compose -f infra/docker-compose.yml exec -T postgres pg_isready -U nexuspay > /dev/null 2>&1; do
+until docker compose -f infra/docker-compose.yml exec -T postgres pg_isready -U nexuspay > /dev/null 2>&1; do
     echo "Waiting for PostgreSQL..."
     sleep 2
 done
 
 # Wait for Kafka
-until docker-compose -f infra/docker-compose.yml exec -T kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+until docker compose -f infra/docker-compose.yml exec -T kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
     echo "Waiting for Kafka..."
     sleep 2
 done
 
 # Create Kafka topics
 echo "📋 Creating Kafka topics..."
-docker-compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic billing-events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1 --if-not-exists
-docker-compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic usage-events --bootstrap-server localhost:9092 --partitions 6 --replication-factor 1 --if-not-exists
-docker-compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic payment-events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1 --if-not-exists
-docker-compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic notification-events --bootstrap-server localhost:9092 --partitions 2 --replication-factor 1 --if-not-exists
+docker compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic billing-events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1 --if-not-exists
+docker compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic usage-events --bootstrap-server localhost:9092 --partitions 6 --replication-factor 1 --if-not-exists
+docker compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic payment-events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1 --if-not-exists
+docker compose -f infra/docker-compose.yml exec kafka kafka-topics --create --topic notification-events --bootstrap-server localhost:9092 --partitions 2 --replication-factor 1 --if-not-exists
 
 echo "✅ Infrastructure services are ready!"
 echo ""
