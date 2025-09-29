@@ -1,0 +1,186 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for transactional data
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexus-postgres
+    environment:
+      POSTGRES_DB: nexuspay
+      POSTGRES_USER: nexuspay
+      POSTGRES_PASSWORD: nexuspay_dev
+      POSTGRES_MULTIPLE_DATABASES: billing,identity,metering
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    networks:
+      - nexuspay-network
+
+  # MongoDB for event storage
+  mongo:
+    image: mongo:7.0
+    container_name: nexus-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: nexuspay
+      MONGO_INITDB_ROOT_PASSWORD: nexuspay_dev
+      MONGO_INITDB_DATABASE: events
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - nexuspay-network
+
+  # Apache Kafka for event streaming
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: nexus-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zk_data:/var/lib/zookeeper/data
+      - zk_logs:/var/lib/zookeeper/log
+    networks:
+      - nexuspay-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: nexus-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_CONFLUENT_SUPPORT_CUSTOMER_ID: anonymous
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - nexuspay-network
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:9092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7.2-alpine
+    container_name: nexus-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass nexuspay_dev
+    volumes:
+      - redis_data:/data
+    networks:
+      - nexuspay-network
+
+  # Kafka UI for development
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: nexus-kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - nexuspay-network
+
+  # MinIO for object storage (S3 compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: nexus-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: nexuspay
+      MINIO_ROOT_PASSWORD: nexuspay_dev123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - nexuspay-network
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nexus-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - nexuspay-network
+
+  # Grafana for monitoring dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nexus-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: nexuspay_dev
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - nexuspay-network
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: nexus-jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    networks:
+      - nexuspay-network
+
+volumes:
+  postgres_data:
+  mongo_data:
+  kafka_data:
+  zk_data:
+  zk_logs:
+  redis_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  nexuspay-network:
+    driver: bridge
