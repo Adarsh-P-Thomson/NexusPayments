@@ -1,0 +1,50 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: nexus-identity-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/identity
+    username: identity_user
+    password: identity_pass
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: identity
+  
+  flyway:
+    schemas: identity
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+nexuspay:
+  jwt:
+    secret: ${JWT_SECRET:nexuspay-default-jwt-secret-key-for-development-only}
+    expiration: 86400000 # 24 hours
+  
+  cors:
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
