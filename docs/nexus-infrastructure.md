@@ -1,53 +1,345 @@
-# NexusPay Infrastructure & Development Setup
+# NexusPay Infrastructure & Production Deployment Guide
 
-Complete infrastructure setup using Docker Compose for local development and Terraform for cloud deployment.
+This comprehensive guide covers the complete infrastructure setup for NexusPay, from local development to production deployment. It includes Docker containerization, cloud deployment strategies, monitoring setup, and operational best practices.
 
-## Local Development Setup
+## 🏗️ Infrastructure Architecture Overview
 
-### Docker Compose (infra/docker-compose.yml)
+### **Local Development Environment**
+```yaml
+Purpose: Full-stack development with hot reload
+Components:
+  - Docker Compose orchestration
+  - PostgreSQL + MongoDB databases
+  - Apache Kafka event streaming
+  - Redis caching and sessions
+  - Monitoring stack (Prometheus, Grafana, Jaeger)
+  - Object storage (MinIO)
+  - Development tools (Kafka UI)
+
+Resources Required:
+  - CPU: 4 cores minimum, 8 cores recommended
+  - RAM: 8GB minimum, 16GB recommended
+  - Storage: 10GB available space
+  - Network: Docker bridge networking
+```
+
+### **Staging Environment**
+```yaml
+Purpose: Pre-production testing and validation
+Infrastructure:
+  - Kubernetes cluster (3 nodes minimum)
+  - Managed databases (AWS RDS, MongoDB Atlas)
+  - Managed Kafka (AWS MSK, Confluent Cloud)
+  - Load balancers and auto-scaling
+  - SSL certificates and domain management
+  - CI/CD pipeline integration
+```
+
+### **Production Environment**
+```yaml
+Purpose: Production workloads with high availability
+Infrastructure:
+  - Multi-region Kubernetes deployment
+  - Highly available managed services
+  - CDN for static assets
+  - WAF and DDoS protection
+  - Comprehensive monitoring and alerting
+  - Backup and disaster recovery
+  - Security scanning and compliance
+```
+
+## 🐳 Local Development Infrastructure
+
+### **Current Docker Compose Setup** ✅ *IMPLEMENTED*
+
+The local development environment is fully implemented and operational with the following services:
+
+#### **Core Database Services**
+```yaml
+# PostgreSQL - Primary transactional database
+postgres:
+  image: postgres:15-alpine
+  container_name: nexus-postgres
+  ports: ["5432:5432"]
+  environment:
+    POSTGRES_DB: nexuspay
+    POSTGRES_USER: nexuspay
+    POSTGRES_PASSWORD: nexuspay_dev
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+    - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+  networks: [nexuspay-network]
+
+# MongoDB - Event storage and document database
+mongo:
+  image: mongo:7.0
+  container_name: nexus-mongo
+  ports: ["27017:27017"]
+  environment:
+    MONGO_INITDB_ROOT_USERNAME: nexuspay
+    MONGO_INITDB_ROOT_PASSWORD: nexuspay_dev
+    MONGO_INITDB_DATABASE: events
+  volumes:
+    - mongo_data:/data/db
+    - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+  networks: [nexuspay-network]
+```
+
+#### **Event Streaming Platform**
+```yaml
+# Apache Kafka - Event streaming and message processing
+kafka:
+  image: confluentinc/cp-kafka:7.5.0
+  container_name: nexus-kafka
+  ports: ["9092:9092"]
+  environment:
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  depends_on: [zookeeper]
+  networks: [nexuspay-network]
+
+# Zookeeper - Kafka coordination service
+zookeeper:
+  image: confluentinc/cp-zookeeper:7.5.0
+  container_name: nexus-zookeeper
+  ports: ["2181:2181"]
+  environment:
+    ZOOKEEPER_CLIENT_PORT: 2181
+    ZOOKEEPER_TICK_TIME: 2000
+  networks: [nexuspay-network]
+```
+
+#### **Caching and Session Storage**
+```yaml
+# Redis - Caching, session storage, rate limiting
+redis:
+  image: redis:7-alpine
+  container_name: nexus-redis
+  ports: ["6379:6379"]
+  command: redis-server --requirepass nexuspay_dev
+  volumes:
+    - redis_data:/data
+  networks: [nexuspay-network]
+```
+
+#### **Object Storage**
+```yaml
+# MinIO - S3-compatible object storage for development
+minio:
+  image: minio/minio:latest
+  container_name: nexus-minio
+  ports: ["9000:9000", "9001:9001"]
+  environment:
+    MINIO_ROOT_USER: nexuspay
+    MINIO_ROOT_PASSWORD: nexuspay_dev123
+  command: server /data --console-address ":9001"
+  volumes:
+    - minio_data:/data
+  networks: [nexuspay-network]
+```
+
+#### **Monitoring and Observability Stack**
+```yaml
+# Prometheus - Metrics collection and storage
+prometheus:
+  image: prom/prometheus:v2.47.0
+  container_name: nexus-prometheus
+  ports: ["9090:9090"]
+  volumes:
+    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    - prometheus_data:/prometheus
+  command:
+    - '--config.file=/etc/prometheus/prometheus.yml'
+    - '--storage.tsdb.path=/prometheus'
+    - '--web.console.libraries=/etc/prometheus/console_libraries'
+    - '--web.console.templates=/etc/prometheus/consoles'
+    - '--storage.tsdb.retention.time=200h'
+    - '--web.enable-lifecycle'
+  networks: [nexuspay-network]
+
+# Grafana - Visualization and dashboards
+grafana:
+  image: grafana/grafana:10.1.0
+  container_name: nexus-grafana
+  ports: ["3001:3000"]
+  environment:
+    GF_SECURITY_ADMIN_USER: admin
+    GF_SECURITY_ADMIN_PASSWORD: nexuspay_dev
+    GF_USERS_ALLOW_SIGN_UP: false
+  volumes:
+    - grafana_data:/var/lib/grafana
+    - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards
+    - ./monitoring/datasources:/etc/grafana/provisioning/datasources
+  networks: [nexuspay-network]
+
+# Jaeger - Distributed tracing
+jaeger:
+  image: jaegertracing/all-in-one:1.50.0
+  container_name: nexus-jaeger
+  ports: 
+    - "16686:16686"  # Jaeger UI
+    - "14268:14268"  # HTTP collector
+    - "14250:14250"  # gRPC collector
+  environment:
+    COLLECTOR_OTLP_ENABLED: true
+  networks: [nexuspay-network]
+```
+
+#### **Development Tools**
+```yaml
+# Kafka UI - Kafka cluster management interface
+kafka-ui:
+  image: provectuslabs/kafka-ui:latest
+  container_name: nexus-kafka-ui
+  ports: ["8090:8080"]
+  environment:
+    KAFKA_CLUSTERS_0_NAME: local
+    KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+  depends_on: [kafka]
+  networks: [nexuspay-network]
+```
+
+### **Infrastructure Service Details**
+
+#### **Database Configuration**
+
+**PostgreSQL Setup:**
+```sql
+-- Automatically created databases:
+nexuspay           -- Main application database
+nexus_identity     -- Identity service schema
+nexus_billing      -- Billing service schema
+nexus_metering     -- Metering service schema
+
+-- Connection details:
+Host: localhost:5432
+Username: nexuspay
+Password: nexuspay_dev
+Max Connections: 100
+Shared Buffers: 256MB
+```
+
+**MongoDB Setup:**
+```javascript
+// Automatically created databases and collections:
+events: {
+  usage_events,      // Real-time usage tracking
+  billing_events,    // Billing system events
+  audit_logs,        // Security and audit trails
+  ml_datasets        // Machine learning training data
+}
+
+// Connection details:
+Host: localhost:27017
+Username: nexuspay
+Password: nexuspay_dev
+Authentication Database: admin
+```
+
+#### **Event Streaming Configuration**
+
+**Kafka Topics:** *(Auto-created by dev-start.sh)*
+```bash
+# Core business event topics
+billing-events          # Subscription and payment events
+usage-events            # Real-time usage data
+notification-events     # Email and alert notifications
+audit-events           # Security and compliance events
+
+# System event topics
+service-health-events   # Service health monitoring
+error-events           # Error tracking and alerting
+```
+
+**Kafka Configuration:**
+```yaml
+Partitions: 3-6 per topic (based on expected load)
+Replication Factor: 1 (development only)
+Retention: 7 days (development)
+Max Message Size: 1MB
+Compression: snappy
+```
+
+#### **Monitoring Configuration**
+
+**Prometheus Targets:**
+```yaml
+# Service discovery configuration
+- job_name: 'nexus-services'
+  static_configs:
+    - targets: 
+      - 'host.docker.internal:8081'  # Identity Service
+      - 'host.docker.internal:8082'  # Billing Service
+      - 'host.docker.internal:8083'  # Metering Service
+      - 'host.docker.internal:8084'  # ML Service
+
+- job_name: 'nexus-infrastructure'
+  static_configs:
+    - targets:
+      - 'postgres:5432'               # PostgreSQL
+      - 'mongo:27017'                 # MongoDB
+      - 'kafka:9092'                  # Kafka
+      - 'redis:6379'                  # Redis
+```
+
+**Grafana Dashboards:** *(Pre-configured)*
+```yaml
+Application Dashboards:
+  - NexusPay Overview          # System-wide metrics
+  - Service Health             # Individual service monitoring
+  - Database Performance       # PostgreSQL and MongoDB metrics
+  - Kafka Streams             # Event processing metrics
+  - User Authentication       # Login and user activity
+
+Infrastructure Dashboards:
+  - Docker Container Metrics  # Resource usage
+  - Network Performance       # Inter-service communication
+  - Storage Utilization       # Database and volume usage
+```
+
+### **Network Architecture**
 
 ```yaml
-version: '3.8'
+# Docker networking configuration
+networks:
+  nexuspay-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
-services:
-  # PostgreSQL Database for transactional data
-  postgres:
-    image: postgres:15-alpine
-    container_name: nexus-postgres
-    environment:
-      POSTGRES_DB: nexuspay
-      POSTGRES_USER: nexuspay
-      POSTGRES_PASSWORD: nexuspay_dev
-      POSTGRES_MULTIPLE_DATABASES: billing,identity,metering
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
-    networks:
-      - nexuspay-network
+# Service communication patterns:
+Frontend (3000) → API Gateway (8080) → Services (8081-8084)
+Services → PostgreSQL (5432) + MongoDB (27017)
+Services → Kafka (9092) → Event Processing
+Services → Redis (6379) → Caching/Sessions
+```
 
-  # MongoDB for event storage
-  mongo:
-    image: mongo:7.0
-    container_name: nexus-mongo
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: nexuspay
-      MONGO_INITDB_ROOT_PASSWORD: nexuspay_dev
-      MONGO_INITDB_DATABASE: events
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    networks:
-      - nexuspay-network
+### **Volume Management**
 
-  # Apache Kafka for event streaming
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: nexus-zookeeper
-    environment:
+```yaml
+# Persistent data storage
+volumes:
+  postgres_data:     # PostgreSQL database files
+  mongo_data:        # MongoDB database files
+  kafka_data:        # Kafka logs and offsets
+  zk_data:          # Zookeeper data
+  zk_logs:          # Zookeeper transaction logs
+  redis_data:       # Redis snapshots and AOF
+  minio_data:       # Object storage files
+  prometheus_data:  # Metrics storage
+  grafana_data:     # Dashboard configurations
+
+# Volume backup strategy (for development):
+docker run --rm -v nexuspay_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres-backup.tar.gz /data
+```
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
@@ -566,12 +858,66 @@ chmod +x scripts/*.sh
 open http://localhost:3000
 ```
 
-This infrastructure setup provides:
+## 🚀 Production Infrastructure
 
-1. **Complete local development environment** with all dependencies
-2. **Automated service orchestration** with proper startup order
-3. **Comprehensive monitoring** with Prometheus, Grafana, and Jaeger
-4. **Event streaming** with Kafka for real-time processing
-5. **Database setup** with PostgreSQL for transactions and MongoDB for events
-6. **Easy scripts** for starting/stopping the entire stack
-7. **Production-ready monitoring** and observability tools
+### **Cloud Deployment Architecture**
+
+#### **Kubernetes Production Setup**
+```yaml
+# Namespace organization
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexuspay-prod
+---
+# Service deployment example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-identity-service
+  namespace: nexuspay-prod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nexus-identity-service
+  template:
+    metadata:
+      labels:
+        app: nexus-identity-service
+    spec:
+      containers:
+      - name: identity-service
+        image: nexuspay/identity-service:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: postgres-url
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 5
+```
+
+This comprehensive infrastructure guide covers all aspects of NexusPay deployment from development to production, ensuring scalable and reliable operations. 🚀
