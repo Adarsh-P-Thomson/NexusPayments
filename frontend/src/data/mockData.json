@@ -1,0 +1,181 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-001",
+      "name": "TechStart Inc",
+      "email": "admin@techstart.com",
+      "plan": "Premium",
+      "status": "active",
+      "joinedDate": "2024-01-15",
+      "monthlyRevenue": 2450.00,
+      "users": 12
+    },
+    {
+      "id": "tenant-002", 
+      "name": "DataFlow Solutions",
+      "email": "billing@dataflow.com",
+      "plan": "Enterprise",
+      "status": "active",
+      "joinedDate": "2023-11-20",
+      "monthlyRevenue": 8900.00,
+      "users": 45
+    },
+    {
+      "id": "tenant-003",
+      "name": "StartupLab",
+      "email": "founder@startuplab.io",
+      "plan": "Basic",
+      "status": "trial",
+      "joinedDate": "2024-12-01",
+      "monthlyRevenue": 499.00,
+      "users": 3
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub-001",
+      "tenantId": "tenant-001",
+      "planName": "Premium Plan",
+      "price": 199.00,
+      "interval": "monthly",
+      "status": "active",
+      "currentPeriodStart": "2024-12-01",
+      "currentPeriodEnd": "2024-12-31",
+      "features": ["Advanced Analytics", "Priority Support", "Custom Integrations"],
+      "usageMetrics": {
+        "apiCalls": 45000,
+        "storage": "2.5GB",
+        "bandwidth": "150GB"
+      }
+    },
+    {
+      "id": "sub-002",
+      "tenantId": "tenant-002",
+      "planName": "Enterprise Plan", 
+      "price": 899.00,
+      "interval": "monthly",
+      "status": "active",
+      "currentPeriodStart": "2024-12-01",
+      "currentPeriodEnd": "2024-12-31",
+      "features": ["Full API Access", "24/7 Support", "Custom SLA", "Advanced Security"],
+      "usageMetrics": {
+        "apiCalls": 250000,
+        "storage": "50GB",
+        "bandwidth": "1TB"
+      }
+    },
+    {
+      "id": "sub-003",
+      "tenantId": "tenant-003",
+      "planName": "Basic Plan",
+      "price": 49.00,
+      "interval": "monthly", 
+      "status": "trial",
+      "currentPeriodStart": "2024-12-01",
+      "currentPeriodEnd": "2024-12-15",
+      "features": ["Basic Analytics", "Email Support"],
+      "usageMetrics": {
+        "apiCalls": 5000,
+        "storage": "500MB",
+        "bandwidth": "10GB"
+      }
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv-001",
+      "tenantId": "tenant-001",
+      "number": "INV-2024-001",
+      "amount": 245.00,
+      "status": "paid",
+      "issueDate": "2024-12-01",
+      "dueDate": "2024-12-15",
+      "paidDate": "2024-12-03",
+      "items": [
+        {
+          "description": "Premium Plan - December 2024",
+          "quantity": 1,
+          "unitPrice": 199.00,
+          "total": 199.00
+        },
+        {
+          "description": "Additional API Calls",
+          "quantity": 10000,
+          "unitPrice": 0.005,
+          "total": 50.00
+        }
+      ]
+    },
+    {
+      "id": "inv-002",
+      "tenantId": "tenant-002",
+      "number": "INV-2024-002",
+      "amount": 945.00,
+      "status": "paid",
+      "issueDate": "2024-12-01",
+      "dueDate": "2024-12-15",
+      "paidDate": "2024-12-02",
+      "items": [
+        {
+          "description": "Enterprise Plan - December 2024",
+          "quantity": 1,
+          "unitPrice": 899.00,
+          "total": 899.00
+        },
+        {
+          "description": "Premium Support",
+          "quantity": 1,
+          "unitPrice": 50.00,
+          "total": 50.00
+        }
+      ]
+    },
+    {
+      "id": "inv-003",
+      "tenantId": "tenant-003",
+      "number": "INV-2024-003",
+      "amount": 0.00,
+      "status": "pending",
+      "issueDate": "2024-12-01",
+      "dueDate": "2024-12-15",
+      "items": [
+        {
+          "description": "Basic Plan Trial - December 2024",
+          "quantity": 1,
+          "unitPrice": 0.00,
+          "total": 0.00
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "overview": {
+      "totalRevenue": 11849.00,
+      "activeTenants": 3,
+      "totalInvoices": 3,
+      "averageRevenuePerTenant": 3949.67
+    },
+    "monthlyRevenue": [
+      { "month": "Jul", "revenue": 8900 },
+      { "month": "Aug", "revenue": 9200 },
+      { "month": "Sep", "revenue": 9800 },
+      { "month": "Oct", "revenue": 10500 },
+      { "month": "Nov", "revenue": 11200 },
+      { "month": "Dec", "revenue": 11849 }
+    ],
+    "tenantGrowth": [
+      { "month": "Jul", "tenants": 1 },
+      { "month": "Aug", "tenants": 1 },
+      { "month": "Sep", "tenants": 1 },
+      { "month": "Oct", "tenants": 2 },
+      { "month": "Nov", "tenants": 2 },
+      { "month": "Dec", "tenants": 3 }
+    ],
+    "usageStats": {
+      "totalApiCalls": 300000,
+      "totalStorage": "53GB",
+      "totalBandwidth": "1.16TB",
+      "averageResponseTime": "145ms"
+    }
+  }
+}
