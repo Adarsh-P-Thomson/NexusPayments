@@ -8,10 +8,15 @@ function App() {
 
   return (
     <>
+    
       <div>
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
         </a>
+              <h1 className="text-3xl font-bold underline text-blue-600">
+        Hello Tailwind + Vite!
+      </h1>
+
         <a href="https://react.dev" target="_blank">
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
