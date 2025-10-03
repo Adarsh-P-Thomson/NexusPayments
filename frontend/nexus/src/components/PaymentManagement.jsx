@@ -9,6 +9,7 @@ function PaymentManagement({ userId }) {
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const loadData = async () => {
