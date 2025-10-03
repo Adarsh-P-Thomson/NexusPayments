@@ -60,14 +60,32 @@ The current implementation includes a **complete subscription and payment proces
 
 ## 🚦 Quick Start
 
-### Prerequisites
+### Option 1: Using the Startup Script (Fastest!)
+
+```bash
+git clone https://github.com/Adarsh-P-Thomson/NexusPayments.git
+cd NexusPayments
+./scripts/start-all.sh
+```
+
+This script automatically:
+- ✅ Checks prerequisites
+- ✅ Starts databases with Docker
+- ✅ Builds and starts the backend
+- ✅ Installs and starts the frontend
+
+Then open `http://localhost:5173` and click "Initialize Data"!
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 - Java 17+
 - Node.js 16+
 - PostgreSQL 12+
 - MongoDB 4.4+
 - Maven 3.6+
 
-### Setup Instructions
+#### Setup Instructions
 
 1. **Clone the repository**
    ```bash
@@ -104,6 +122,7 @@ The current implementation includes a **complete subscription and payment proces
 
 ## 📚 Documentation
 
+- **[🚀 Quick Start Guide](./QUICKSTART.md)** - Get started in 5 minutes!
 - **[Setup and Launch Guide](./docs/SETUP_AND_LAUNCH.md)** - Comprehensive setup instructions
 - **[API Documentation](./docs/API_DOCUMENTATION.md)** - Complete API reference
 - **[Database Schema](./docs/DATABASE_SCHEMA.md)** - Database structure and design
