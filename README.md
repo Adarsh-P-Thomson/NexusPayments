@@ -34,5 +34,189 @@ NexusPay is a powerful and intelligent "billing engine" that other online compan
 - **Predictive analytics** for churn prevention
 - **Comprehensive reporting** and data export capabilities
 
+## 🎯 Current Implementation
 
+The current implementation includes a **complete subscription and payment processing system** with:
+
+### Backend Features
+- **Subscription Management**: Create, view, and cancel subscriptions with monthly/yearly billing options
+- **Plan Management**: CRUD operations for subscription plans
+- **Bill Generation**: Automatic bill generation based on subscription cycles
+- **Payment Processing**: Simulated payment gateway with 80% success / 20% failure rate
+- **Payment Retry Logic**: Automatic retry scheduling for failed payments
+- **Transaction Storage**: MongoDB-based flexible transaction storage for analytics
+
+### Frontend Features
+- **Interactive Dashboard**: Visual analytics with charts and graphs
+- **Subscription Manager**: User-friendly interface for managing subscriptions
+- **Payment Interface**: Process payments and view transaction history
+- **Plan Manager**: Admin interface for managing subscription plans
+- **Real-time Status**: Check active subscription status
+
+### Tech Stack
+- **Backend**: Spring Boot 3.5, Java 17, PostgreSQL, MongoDB
+- **Frontend**: React 19, Vite, Tailwind CSS, Recharts
+- **APIs**: RESTful APIs with comprehensive endpoints
+
+## 🚦 Quick Start
+
+### Prerequisites
+- Java 17+
+- Node.js 16+
+- PostgreSQL 12+
+- MongoDB 4.4+
+- Maven 3.6+
+
+### Setup Instructions
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Adarsh-P-Thomson/NexusPayments.git
+   cd NexusPayments
+   ```
+
+2. **Start databases** (using Docker Compose)
+   ```bash
+   cd backend/apinexus
+   docker-compose up -d
+   ```
+
+3. **Start backend**
+   ```bash
+   cd backend/apinexus
+   mvn spring-boot:run
+   ```
+   Backend runs on `http://localhost:8080`
+
+4. **Start frontend**
+   ```bash
+   cd frontend/nexus
+   npm install
+   npm run dev
+   ```
+   Frontend runs on `http://localhost:5173`
+
+5. **Initialize data**
+   - Open browser to `http://localhost:5173`
+   - Navigate to "Initialize Data"
+   - Click "Initialize Data" button
+   - This creates demo user and sample subscription plans
+
+## 📚 Documentation
+
+- **[Setup and Launch Guide](./docs/SETUP_AND_LAUNCH.md)** - Comprehensive setup instructions
+- **[API Documentation](./docs/API_DOCUMENTATION.md)** - Complete API reference
+- **[Database Schema](./docs/DATABASE_SCHEMA.md)** - Database structure and design
+
+## 🎨 Features Walkthrough
+
+### 1. Dashboard
+View comprehensive analytics including:
+- Active subscription count
+- Paid and pending bills
+- Total spending
+- Transaction status distribution (pie chart)
+- Monthly spending trends (bar chart)
+
+### 2. Subscription Management
+- Browse available subscription plans
+- Check active subscription status
+- Subscribe with monthly or yearly billing
+- View subscription details and next billing date
+- Cancel active subscriptions
+
+### 3. Payment Processing
+- View all bills (pending, paid, failed)
+- Initiate payments with simulated gateway
+- Automatic payment retry for failures
+- View complete transaction history
+- Retry failed transactions manually
+
+### 4. Plan Management (Admin)
+- Create new subscription plans
+- Edit existing plans
+- Activate/deactivate plans
+- Set monthly and yearly pricing
+- Define plan features
+
+## 🗄️ Database Architecture
+
+### PostgreSQL (Relational Data)
+- **users**: User account information
+- **subscription_plans**: Available subscription plans
+- **user_subscriptions**: Active/inactive user subscriptions
+- **bills**: Billing records
+
+### MongoDB (Transaction Data)
+- **transactions**: Flexible transaction records with metadata
+- Supports complex analytics and reporting
+- Optimized for high-volume writes
+
+## 🔌 API Endpoints
+
+### Core Endpoints
+- `GET/POST /api/users` - User management
+- `GET/POST/PUT/DELETE /api/subscription-plans` - Plan management
+- `GET/POST/DELETE /api/subscriptions` - Subscription management
+- `GET /api/bills` - Bill retrieval
+- `POST /api/payments/initiate` - Payment processing
+- `POST /api/payments/retry/{id}` - Payment retry
+- `GET /api/transactions` - Transaction history
+
+## 💳 Payment Simulation
+
+The payment system simulates real-world payment gateway behavior:
+- **80% Success Rate**: Most payments succeed
+- **20% Failure Rate**: Some payments fail (simulating declined cards, insufficient funds, etc.)
+- **Automatic Retry**: Failed payments are scheduled for retry the next day
+- **Manual Retry**: Users can manually retry failed payments
+
+## 🛠️ Technology Stack
+
+### Backend
+- Spring Boot 3.5.6
+- Spring Data JPA (PostgreSQL)
+- Spring Data MongoDB
+- Lombok
+- Java 17
+
+### Frontend
+- React 19
+- React Router DOM
+- Vite
+- Tailwind CSS
+- Recharts (for graphs)
+- Axios (for API calls)
+
+### Infrastructure
+- PostgreSQL 12+ (RDBMS)
+- MongoDB 4.4+ (NoSQL)
+- Docker & Docker Compose
+
+## 📈 Future Enhancements
+
+- Real payment gateway integration (Stripe, PayPal)
+- Email notifications for bills and payment failures
+- User authentication and authorization
+- Multi-tenant support
+- Advanced analytics and reporting
+- Scheduled billing automation
+- Webhook support for external integrations
+- Invoice PDF generation
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📧 Support
+
+For questions and support, please open an issue in the GitHub repository.
+
+---
+
+Built with ❤️ for modern SaaS businesses
 
