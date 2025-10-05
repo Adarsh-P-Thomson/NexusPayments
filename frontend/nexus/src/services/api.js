@@ -9,11 +9,33 @@ const api = axios.create({
   },
 });
 
+// Health Check API
+export const healthAPI = {
+  checkHealth: () => api.get('/health'),
+  checkPostgres: () => api.get('/health/postgres'),
+  checkMongoDB: () => api.get('/health/mongodb'),
+};
+
+// Data Initialization API
+export const initAPI = {
+  initializeData: () => api.post('/init/data'),
+  getInitStatus: () => api.get('/init/status'),
+};
+
 // User API
 export const userAPI = {
   getAllUsers: () => api.get('/users'),
   getUserById: (id) => api.get(`/users/${id}`),
   createUser: (userData) => api.post('/users', userData),
+};
+
+// Card API
+export const cardAPI = {
+  getUserCards: (userId) => api.get(`/cards/user/${userId}`),
+  getCardById: (id) => api.get(`/cards/${id}`),
+  createCard: (cardData) => api.post('/cards', cardData),
+  updateCard: (id, cardData) => api.put(`/cards/${id}`, cardData),
+  deleteCard: (id) => api.delete(`/cards/${id}`),
 };
 
 // Subscription Plan API

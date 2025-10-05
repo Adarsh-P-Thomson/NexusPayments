@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { userAPI, subscriptionPlanAPI } from '../services/api';
+import { initAPI } from '../services/api';
 
 function DataInitializer() {
   const [loading, setLoading] = useState(false);
@@ -10,51 +10,22 @@ function DataInitializer() {
     setMessage('Initializing data...');
 
     try {
-      // Create a test user
-      const userResponse = await userAPI.createUser({
-        email: 'demo@nexuspay.com',
-        name: 'Demo User',
-      });
+      // Use the backend initialization endpoint
+      const response = await initAPI.initializeData();
       
-      const userId = userResponse.data.id;
-      setMessage(`Created user with ID: ${userId}`);
-
-      // Create sample subscription plans
-      const plans = [
-        {
-          name: 'Basic Plan',
-          description: 'Perfect for individuals and small teams',
-          monthlyPrice: 9.99,
-          yearlyPrice: 99.99,
-          features: 'Up to 5 users, 10GB storage, Email support',
-          active: true,
-        },
-        {
-          name: 'Professional Plan',
-          description: 'Ideal for growing businesses',
-          monthlyPrice: 29.99,
-          yearlyPrice: 299.99,
-          features: 'Up to 50 users, 100GB storage, Priority support, API access',
-          active: true,
-        },
-        {
-          name: 'Enterprise Plan',
-          description: 'For large organizations',
-          monthlyPrice: 99.99,
-          yearlyPrice: 999.99,
-          features: 'Unlimited users, 1TB storage, 24/7 support, Custom integrations',
-          active: true,
-        },
-      ];
-
-      for (const plan of plans) {
-        await subscriptionPlanAPI.createPlan(plan);
+      if (response.data.success) {
+        const messages = response.data.messages.join(', ');
+        setMessage(`✓ Success! ${messages}. 
+                    Users: ${response.data.userCount}, 
+                    Plans: ${response.data.planCount}, 
+                    Cards: ${response.data.cardCount}, 
+                    Transactions: ${response.data.transactionCount}`);
+      } else {
+        setMessage(`Error: ${response.data.error || 'Failed to initialize data'}`);
       }
-
-      setMessage(`✓ Successfully initialized data! Created user (ID: ${userId}) and ${plans.length} subscription plans.`);
     } catch (error) {
       console.error('Error initializing data:', error);
-      setMessage(`Error: ${error.response?.data?.message || error.message || 'Failed to initialize data'}`);
+      setMessage(`Error: ${error.response?.data?.error || error.message || 'Failed to initialize data'}`);
     } finally {
       setLoading(false);
     }
@@ -65,7 +36,7 @@ function DataInitializer() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold mb-4">Data Initializer</h2>
         <p className="text-gray-600 mb-4">
-          Click the button below to initialize the database with sample data (demo user and subscription plans).
+          Click the button below to initialize the database with sample data (demo users, subscription plans, and sample transactions).
         </p>
         
         <button
@@ -86,9 +57,12 @@ function DataInitializer() {
           <h3 className="font-semibold mb-2">What will be created:</h3>
           <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
             <li>Demo user (demo@nexuspay.com)</li>
+            <li>John Doe (john.doe@example.com)</li>
+            <li>Jane Smith (jane.smith@example.com)</li>
             <li>Basic Plan ($9.99/month or $99.99/year)</li>
             <li>Professional Plan ($29.99/month or $299.99/year)</li>
             <li>Enterprise Plan ($99.99/month or $999.99/year)</li>
+            <li>Sample transaction data in MongoDB</li>
           </ul>
         </div>
       </div>
