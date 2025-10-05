@@ -1,21 +1,54 @@
 services:
-  mongodb:
-    image: 'mongo:latest'
-    environment:
-      - 'MONGO_INITDB_DATABASE=mydatabase'
-      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
-      - 'MONGO_INITDB_ROOT_USERNAME=root'
-    ports:
-      - '27017'
   postgres:
     image: 'postgres:latest'
+    container_name: nexuspay-postgres
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      - 'POSTGRES_DB=nexuspay'
+      - 'POSTGRES_USER=nexuspay'
+      - 'POSTGRES_PASSWORD=nexuspay_dev'
     ports:
-      - '5432'
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexuspay"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  mongodb:
+    image: 'mongo:latest'
+    container_name: nexuspay-mongo
+    environment:
+      - 'MONGO_INITDB_ROOT_USERNAME=nexuspay'
+      - 'MONGO_INITDB_ROOT_PASSWORD=nexuspay_dev'
+      - 'MONGO_INITDB_DATABASE=nexuspay_transactions'
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+      - ./init-scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
   redis:
     image: 'redis:latest'
+    container_name: nexuspay-redis
     ports:
-      - '6379'
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
