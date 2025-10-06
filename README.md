@@ -60,21 +60,22 @@ The current implementation includes a **complete subscription and payment proces
 
 ## 🚦 Quick Start
 
-### Option 1: Using the Startup Script (Fastest!)
+### Option 1: Using the Automated Startup Script (Fastest!)
 
 ```bash
 git clone https://github.com/Adarsh-P-Thomson/NexusPayments.git
 cd NexusPayments
-./scripts/start-all.sh
+./start-nexuspay.sh
 ```
 
 This script automatically:
-- ✅ Checks prerequisites
-- ✅ Starts databases with Docker
-- ✅ Builds and starts the backend
+- ✅ Checks all prerequisites (Docker, Java, Maven, Node.js)
+- ✅ Starts databases with Docker (PostgreSQL, MongoDB, Redis)
+- ✅ Builds and starts the backend API server
+- ✅ Initializes sample data (users, plans, transactions)
 - ✅ Installs and starts the frontend
 
-Then open `http://localhost:5173` and click "Initialize Data"!
+Then open **http://localhost:5173** and start using NexusPay!
 
 ### Option 2: Manual Setup
 
@@ -84,6 +85,7 @@ Then open `http://localhost:5173` and click "Initialize Data"!
 - PostgreSQL 12+
 - MongoDB 4.4+
 - Maven 3.6+
+- Docker & Docker Compose (recommended)
 
 #### Setup Instructions
 
@@ -96,7 +98,7 @@ Then open `http://localhost:5173` and click "Initialize Data"!
 2. **Start databases** (using Docker Compose)
    ```bash
    cd backend/apinexus
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Start backend**
@@ -106,7 +108,12 @@ Then open `http://localhost:5173` and click "Initialize Data"!
    ```
    Backend runs on `http://localhost:8080`
 
-4. **Start frontend**
+4. **Initialize sample data**
+   ```bash
+   curl -X POST http://localhost:8080/api/init/data
+   ```
+
+5. **Start frontend**
    ```bash
    cd frontend/nexus
    npm install
@@ -114,17 +121,16 @@ Then open `http://localhost:5173` and click "Initialize Data"!
    ```
    Frontend runs on `http://localhost:5173`
 
-5. **Initialize data**
+6. **Access the application**
    - Open browser to `http://localhost:5173`
-   - Navigate to "Initialize Data"
-   - Click "Initialize Data" button
-   - This creates demo user and sample subscription plans
+   - The system is now ready with sample data loaded!
 
 ## 📚 Documentation
 
+- **[🚀 Running Guide](./RUNNING_GUIDE.md)** - Complete setup and running instructions
 - **[🚀 Quick Start Guide](./QUICKSTART.md)** - Get started in 5 minutes!
+- **[🔧 Backend API Documentation](./backend/apinexus/README.md)** - Complete API reference with all endpoints
 - **[Setup and Launch Guide](./docs/SETUP_AND_LAUNCH.md)** - Comprehensive setup instructions
-- **[API Documentation](./docs/API_DOCUMENTATION.md)** - Complete API reference
 - **[Database Schema](./docs/DATABASE_SCHEMA.md)** - Database structure and design
 
 ## 🎨 Features Walkthrough
@@ -161,26 +167,40 @@ View comprehensive analytics including:
 ## 🗄️ Database Architecture
 
 ### PostgreSQL (Relational Data)
-- **users**: User account information
-- **subscription_plans**: Available subscription plans
-- **user_subscriptions**: Active/inactive user subscriptions
-- **bills**: Billing records
+- **users** - User account information (email, name)
+- **card_details** - Payment card details (last 4 digits, type, expiry, cardholder name)
+- **subscription_plans** - Available subscription plans (name, pricing, features)
+- **user_subscriptions** - Active/inactive user subscriptions
+- **bills** - Billing records
 
 ### MongoDB (Transaction Data)
-- **transactions**: Flexible transaction records with metadata
+- **transactions** - Flexible transaction records with metadata
 - Supports complex analytics and reporting
 - Optimized for high-volume writes
+- Sample data included for testing
 
 ## 🔌 API Endpoints
 
+### Health & Monitoring
+- `GET /api/health` - Check all services health (PostgreSQL + MongoDB)
+- `GET /api/health/postgres` - Check PostgreSQL connection
+- `GET /api/health/mongodb` - Check MongoDB connection
+
+### Data Initialization
+- `POST /api/init/data` - Initialize sample data (users, plans, transactions)
+- `GET /api/init/status` - Check initialization status
+
 ### Core Endpoints
 - `GET/POST /api/users` - User management
+- `GET/POST/PUT/DELETE /api/cards` - Card management
 - `GET/POST/PUT/DELETE /api/subscription-plans` - Plan management
 - `GET/POST/DELETE /api/subscriptions` - Subscription management
 - `GET /api/bills` - Bill retrieval
 - `POST /api/payments/initiate` - Payment processing
 - `POST /api/payments/retry/{id}` - Payment retry
 - `GET /api/transactions` - Transaction history
+
+**For complete API documentation with request/response examples, see:** [`backend/apinexus/README.md`](./backend/apinexus/README.md)
 
 ## 💳 Payment Simulation
 
