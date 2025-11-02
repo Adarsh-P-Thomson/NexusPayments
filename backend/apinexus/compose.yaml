@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: 'postgres:latest'
+    image: 'postgres:14-alpine'
     container_name: nexuspay-postgres
     environment:
       - 'POSTGRES_DB=nexuspay'
@@ -22,15 +22,15 @@ services:
     container_name: nexuspay-mongo
     environment:
       - 'MONGO_INITDB_DATABASE=nexuspay_transactions' # The database to create
-      - 'MONGO_USERNAME=nexuspay' # The non-root user to create
-      - 'MONGO_PASSWORD=nexuspay_dev' # The password for the non-root user
+      - 'MONGO_INITDB_ROOT_USERNAME=nexuspay' # The root user to create
+      - 'MONGO_INITDB_ROOT_PASSWORD=nexuspay_dev' # The password for the root user
     ports:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
       - ./init-scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     healthcheck:
-      test: ["CMD", "mongotop", "--username", "nexuspay", "--password", "nexuspay_dev", "--authenticationDatabase", "nexuspay_transactions", "--limit", "1"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -9,5 +9,9 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, Long> {
     List<SubscriptionPlan> findByActiveTrue();
+    List<SubscriptionPlan> findByActiveTrueAndIsDefaultTrue();
+    List<SubscriptionPlan> findByActiveTrueAndIsDefaultFalse();
+    List<SubscriptionPlan> findByPlanType(String planType);
+    List<SubscriptionPlan> findByActiveTrueAndPlanType(String planType);
     Optional<SubscriptionPlan> findByName(String name);
 }

@@ -41,11 +41,15 @@ export const cardAPI = {
 // Subscription Plan API
 export const subscriptionPlanAPI = {
   getAllPlans: () => api.get('/subscription-plans'),
-  getActivePlans: () => api.get('/subscription-plans/active'),
+  getActivePlans: () => api.get('/subscription-plans'),
+  getDefaultPlans: () => api.get('/subscription-plans/default'),
+  getOfferPlans: () => api.get('/subscription-plans/offers'),
+  getPlansByType: (type) => api.get(`/subscription-plans/type/${type}`),
   getPlanById: (id) => api.get(`/subscription-plans/${id}`),
   createPlan: (planData) => api.post('/subscription-plans', planData),
   updatePlan: (id, planData) => api.put(`/subscription-plans/${id}`, planData),
   deletePlan: (id) => api.delete(`/subscription-plans/${id}`),
+  activatePlan: (id) => api.put(`/subscription-plans/${id}/activate`),
 };
 
 // Subscription API
