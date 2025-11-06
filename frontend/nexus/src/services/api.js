@@ -79,4 +79,16 @@ export const transactionAPI = {
   getTransactionsByStatus: (status) => api.get(`/transactions/status/${status}`),
 };
 
+// Sales API
+export const salesAPI = {
+  getAllSales: (params) => api.get('/sales', { params }),
+  getAnalytics: (params) => api.get('/sales/analytics', { params }),
+  getSalesByProduct: (params) => api.get('/sales/by-product', { params }),
+  getSalesByCategory: (params) => api.get('/sales/by-category', { params }),
+  getSalesByPeriod: (params) => api.get('/sales/by-period', { params }),
+  getTopProducts: (params) => api.get('/sales/top-products', { params }),
+  getSalesByRegion: (region) => api.get(`/sales/region/${region}`),
+  createSale: (saleData) => api.post('/sales', saleData),
+};
+
 export default api;
