@@ -6,6 +6,7 @@ import PaymentManagement from './components/PaymentManagement';
 import SubscriptionPlanManager from './components/SubscriptionPlanManager';
 import DataInitializer from './components/DataInitializer';
 import SalesAnalytics from './components/SalesAnalytics';
+import BusinessSuggestions from './components/BusinessSuggestions';
 import './App.css';
 
 function App() {
@@ -35,6 +36,9 @@ function App() {
                 <Link to="/sales" className="px-3 py-2 rounded-md hover:bg-blue-700">
                   Sales Analytics
                 </Link>
+                <Link to="/suggestions" className="px-3 py-2 rounded-md hover:bg-blue-700">
+                  Suggestions
+                </Link>
                 <Link to="/plan-manager" className="px-3 py-2 rounded-md hover:bg-blue-700">
                   Plan Manager
                 </Link>
@@ -53,6 +57,7 @@ function App() {
             <Route path="/subscriptions" element={<SubscriptionManagement userId={userId} />} />
             <Route path="/payments" element={<PaymentManagement userId={userId} />} />
             <Route path="/sales" element={<SalesAnalytics />} />
+            <Route path="/suggestions" element={<BusinessSuggestions />} />
             <Route path="/plan-manager" element={<SubscriptionPlanManager />} />
             <Route path="/initialize" element={<DataInitializer />} />
           </Routes>

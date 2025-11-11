@@ -1,5 +1,7 @@
 package com.apiserver.apinexus.controller;
 
+import com.apiserver.apinexus.dto.BillGenerationRequestDTO;
+import com.apiserver.apinexus.dto.GeneratedBillDTO;
 import com.apiserver.apinexus.model.Bill;
 import com.apiserver.apinexus.service.BillService;
 import lombok.RequiredArgsConstructor;
@@ -24,5 +26,11 @@ public class BillController {
     @GetMapping("/pending")
     public ResponseEntity<List<Bill>> getPendingBills() {
         return ResponseEntity.ok(billService.getPendingBills());
+    }
+    
+    @PostMapping("/generate-from-sales")
+    public ResponseEntity<GeneratedBillDTO> generateBillFromSales(@RequestBody BillGenerationRequestDTO request) {
+        GeneratedBillDTO bill = billService.generateBillFromSales(request);
+        return ResponseEntity.ok(bill);
     }
 }

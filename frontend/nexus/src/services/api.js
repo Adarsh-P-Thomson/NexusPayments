@@ -64,6 +64,7 @@ export const subscriptionAPI = {
 export const billAPI = {
   getUserBills: (userId) => api.get(`/bills/user/${userId}`),
   getPendingBills: () => api.get('/bills/pending'),
+  generateFromSales: (requestData) => api.post('/bills/generate-from-sales', requestData),
 };
 
 // Payment API
@@ -89,6 +90,17 @@ export const salesAPI = {
   getTopProducts: (params) => api.get('/sales/top-products', { params }),
   getSalesByRegion: (region) => api.get(`/sales/region/${region}`),
   createSale: (saleData) => api.post('/sales', saleData),
+};
+
+// Suggestions API
+export const suggestionsAPI = {
+  getAllSuggestions: (params) => api.get('/suggestions', { params }),
+  getInventorySuggestions: () => api.get('/suggestions/inventory'),
+  getPricingSuggestions: () => api.get('/suggestions/pricing'),
+  getMarketingSuggestions: () => api.get('/suggestions/marketing'),
+  getRegionalSuggestions: () => api.get('/suggestions/regional'),
+  getBundlingSuggestions: () => api.get('/suggestions/bundles'),
+  getHighPriority: () => api.get('/suggestions/high-priority'),
 };
 
 export default api;

@@ -33,6 +33,7 @@ const SalesAnalytics = () => {
   const [categorySales, setCategorySales] = useState([]);
   const [timePeriodSales, setTimePeriodSales] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
@@ -40,10 +41,11 @@ const SalesAnalytics = () => {
     endDate: '',
   });
   const [timePeriod, setTimePeriod] = useState('daily');
+  const [selectedProduct, setSelectedProduct] = useState('all');
 
   useEffect(() => {
     fetchAllData();
-  }, [dateRange, timePeriod]);
+  }, [dateRange, timePeriod, selectedProduct]);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -51,6 +53,20 @@ const SalesAnalytics = () => {
       const params = {};
       if (dateRange.startDate) params.startDate = new Date(dateRange.startDate).toISOString();
       if (dateRange.endDate) params.endDate = new Date(dateRange.endDate).toISOString();
+
+      // First get all products for the dropdown
+      const allSalesRes = await salesAPI.getAllSales(params);
+      const uniqueProducts = [...new Map(
+        allSalesRes.data.map(sale => [sale.productId, { id: sale.productId, name: sale.productName }])
+      ).values()];
+      setAllProducts(uniqueProducts);
+
+      // Apply product filter if selected
+      let filteredParams = { ...params };
+      if (selectedProduct !== 'all') {
+        // For product-specific queries, we'll filter client-side after fetching
+        // Alternatively, add productId to API params if backend supports it
+      }
 
       const [
         analyticsRes,
@@ -66,11 +82,105 @@ const SalesAnalytics = () => {
         salesAPI.getTopProducts({ ...params, limit: 5 }),
       ]);
 
-      setAnalytics(analyticsRes.data);
-      setProductSales(productSalesRes.data);
-      setCategorySales(categorySalesRes.data);
-      setTimePeriodSales(timePeriodRes.data);
-      setTopProducts(topProductsRes.data);
+      // Filter data by selected product if needed
+      let filteredAnalytics = analyticsRes.data;
+      let filteredProductSales = productSalesRes.data;
+      let filteredCategorySales = categorySalesRes.data;
+      let filteredTimePeriod = timePeriodRes.data;
+      let filteredTopProducts = topProductsRes.data;
+
+      if (selectedProduct !== 'all') {
+        const productId = parseInt(selectedProduct);
+        
+        // Filter raw sales data for the selected product
+        const selectedProductData = allSalesRes.data.filter(s => s.productId === productId);
+        
+        if (selectedProductData.length > 0) {
+          // Recalculate analytics
+          filteredAnalytics = {
+            totalRevenue: selectedProductData.reduce((sum, s) => sum + s.finalAmount, 0),
+            totalSales: selectedProductData.length,
+            totalQuantitySold: selectedProductData.reduce((sum, s) => sum + s.quantity, 0),
+            averageOrderValue: selectedProductData.reduce((sum, s) => sum + s.finalAmount, 0) / selectedProductData.length,
+            totalDiscounts: selectedProductData.reduce((sum, s) => sum + (s.discountApplied || 0), 0),
+            premiumCustomerSales: selectedProductData.filter(s => s.isPremiumCustomer).length,
+            regularCustomerSales: selectedProductData.filter(s => !s.isPremiumCustomer).length,
+          };
+
+          // Recalculate product sales (will be just one product)
+          const productName = selectedProductData[0].productName;
+          filteredProductSales = [{
+            productId: productId,
+            productName: productName,
+            totalRevenue: filteredAnalytics.totalRevenue,
+            totalQuantity: filteredAnalytics.totalQuantitySold,
+            salesCount: filteredAnalytics.totalSales
+          }];
+
+          // Recalculate category sales (will be just the category of this product)
+          const category = selectedProductData[0].productCategory;
+          filteredCategorySales = [{
+            category: category,
+            salesCount: filteredAnalytics.totalSales,
+            totalRevenue: filteredAnalytics.totalRevenue,
+            totalQuantity: filteredAnalytics.totalQuantitySold
+          }];
+
+          // Recalculate time period sales by aggregating by period
+          const periodMap = new Map();
+          selectedProductData.forEach(sale => {
+            const saleDate = new Date(sale.saleDate);
+            let periodKey;
+            
+            // Format period based on timePeriod setting
+            if (timePeriod === 'daily') {
+              periodKey = saleDate.toISOString().split('T')[0]; // YYYY-MM-DD
+            } else if (timePeriod === 'weekly') {
+              // Get week number
+              const startOfYear = new Date(saleDate.getFullYear(), 0, 1);
+              const weekNum = Math.ceil(((saleDate - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+              periodKey = `${saleDate.getFullYear()}-W${weekNum}`;
+            } else if (timePeriod === 'monthly') {
+              periodKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
+            } else if (timePeriod === 'yearly') {
+              periodKey = `${saleDate.getFullYear()}`;
+            }
+
+            if (!periodMap.has(periodKey)) {
+              periodMap.set(periodKey, {
+                period: periodKey,
+                revenue: 0,
+                salesCount: 0,
+                quantity: 0
+              });
+            }
+
+            const periodData = periodMap.get(periodKey);
+            periodData.revenue += sale.finalAmount;
+            periodData.salesCount += 1;
+            periodData.quantity += sale.quantity;
+          });
+
+          filteredTimePeriod = Array.from(periodMap.values()).sort((a, b) => 
+            a.period.localeCompare(b.period)
+          );
+
+          // Top products will be just this one product
+          filteredTopProducts = [{
+            productId: productId,
+            productName: productName,
+            totalRevenue: filteredAnalytics.totalRevenue,
+            totalQuantity: filteredAnalytics.totalQuantitySold,
+            salesCount: filteredAnalytics.totalSales
+          }];
+        }
+      }
+
+      setAnalytics(filteredAnalytics);
+      setProductSales(filteredProductSales);
+      setCategorySales(filteredCategorySales);
+      setTimePeriodSales(filteredTimePeriod);
+      setTopProducts(filteredTopProducts);
     } catch (error) {
       console.error('Error fetching sales data:', error);
     } finally {
@@ -195,6 +305,21 @@ const SalesAnalytics = () => {
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Product:</label>
+              <select
+                value={selectedProduct}
+                onChange={(e) => setSelectedProduct(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Products</option>
+                {allProducts.map(product => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
               </select>
             </div>
             {(dateRange.startDate || dateRange.endDate) && (

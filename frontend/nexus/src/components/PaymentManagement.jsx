@@ -6,6 +6,14 @@ function PaymentManagement({ userId }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [showBillGenerator, setShowBillGenerator] = useState(false);
+  const [generatedBill, setGeneratedBill] = useState(null);
+  const [billRequest, setBillRequest] = useState({
+    period: 'MONTH',
+    startDate: '',
+    endDate: '',
+    customerName: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -82,6 +90,30 @@ function PaymentManagement({ userId }) {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  const handleGenerateBill = async () => {
+    try {
+      const response = await billAPI.generateFromSales(billRequest);
+      setGeneratedBill(response.data);
+    } catch (error) {
+      console.error('Error generating bill:', error);
+      alert('Failed to generate bill');
+    }
+  };
+
+  const handlePrintBill = () => {
+    window.print();
+  };
+
+  const resetBillGenerator = () => {
+    setGeneratedBill(null);
+    setBillRequest({
+      period: 'MONTH',
+      startDate: '',
+      endDate: '',
+      customerName: '',
+    });
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading...</div>;
   }
@@ -89,6 +121,201 @@ function PaymentManagement({ userId }) {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Payment Management</h1>
+
+      {/* Bill Generator Section */}
+      <div className="mb-8 bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Generate Bill from Sales</h2>
+          <button
+            onClick={() => setShowBillGenerator(!showBillGenerator)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            {showBillGenerator ? 'Hide' : 'Show'} Generator
+          </button>
+        </div>
+
+        {showBillGenerator && (
+          <div className="space-y-4">
+            {!generatedBill ? (
+              <div className="space-y-4">
+                {/* Period Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Time Period
+                    </label>
+                    <select
+                      value={billRequest.period}
+                      onChange={(e) => setBillRequest({...billRequest, period: e.target.value})}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="WEEK">This Week</option>
+                      <option value="MONTH">This Month</option>
+                      <option value="YEAR">This Year</option>
+                      <option value="CUSTOM">Custom Range</option>
+                    </select>
+                  </div>
+
+                  {billRequest.period === 'CUSTOM' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={billRequest.startDate}
+                          onChange={(e) => setBillRequest({...billRequest, startDate: e.target.value})}
+                          className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={billRequest.endDate}
+                          onChange={(e) => setBillRequest({...billRequest, endDate: e.target.value})}
+                          className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Customer Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={billRequest.customerName}
+                      onChange={(e) => setBillRequest({...billRequest, customerName: e.target.value})}
+                      placeholder="Leave empty for all customers"
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGenerateBill}
+                  className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+                >
+                  Generate Bill
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Bill Preview */}
+                <div className="border border-gray-300 rounded-lg p-6 bg-gray-50">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800">SALES BILL</h3>
+                      <p className="text-gray-600">Bill No: {generatedBill.billNumber}</p>
+                      <p className="text-gray-600">Date: {new Date(generatedBill.generatedDate).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-700 font-medium">Period: {generatedBill.period}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(generatedBill.periodStartDate).toLocaleDateString()} - {new Date(generatedBill.periodEndDate).toLocaleDateString()}
+                      </p>
+                      {generatedBill.customerName && (
+                        <p className="text-gray-700 mt-2">Customer: {generatedBill.customerName}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Line Items Table */}
+                  <div className="mb-6">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="border border-gray-300 px-4 py-2 text-left">Product</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Qty</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Unit Price</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Subtotal</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Discount</th>
+                          <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatedBill.lineItems.map((item, index) => (
+                          <tr key={index}>
+                            <td className="border border-gray-300 px-4 py-2">{item.productName}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">{item.quantity}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">${item.unitPrice.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">${item.subtotal.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right">${item.discount.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right font-medium">${item.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="flex justify-end">
+                    <div className="w-64 space-y-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>${generatedBill.subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600">
+                        <span>Total Discount:</span>
+                        <span>-${generatedBill.totalDiscount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span>Taxable Amount:</span>
+                        <span>${generatedBill.taxableAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tax ({(generatedBill.taxRate * 100).toFixed(0)}%):</span>
+                        <span>${generatedBill.taxAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg border-t-2 border-gray-800 pt-2">
+                        <span>Grand Total:</span>
+                        <span>${generatedBill.grandTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistics */}
+                  <div className="mt-6 pt-6 border-t border-gray-300 grid grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div>
+                      <p className="font-medium">Total Transactions</p>
+                      <p className="text-2xl font-bold text-gray-800">{generatedBill.totalTransactions}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Items Sold</p>
+                      <p className="text-2xl font-bold text-gray-800">{generatedBill.totalItemsSold}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Payment Method</p>
+                      <p className="text-2xl font-bold text-gray-800">{generatedBill.paymentMethod}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handlePrintBill}
+                    className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
+                  >
+                    Print Bill
+                  </button>
+                  <button
+                    onClick={resetBillGenerator}
+                    className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+                  >
+                    Generate New Bill
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Bills Section */}
       <div className="mb-8">
