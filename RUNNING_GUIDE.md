@@ -1,40 +1,72 @@
 # NexusPay - Complete Setup and Running Guide
 
-## 🚀 Quick Start (Recommended)
+## 🚀 Quick Start
 
 This guide will help you get NexusPay up and running in minutes!
 
 ### Prerequisites
 
 Ensure you have the following installed:
-- ✅ **Docker & Docker Compose** (for databases)
+- ✅ **PostgreSQL 12+** (running locally on port 5432)
+- ✅ **MongoDB 4.4+** (running locally on port 27017)
 - ✅ **Java 17+** (for backend)
 - ✅ **Maven 3.6+** (for backend build)
-- ✅ **Node.js 16+** (for frontend)
+- ✅ **Node.js 18+** (for frontend)
 - ✅ **npm** (comes with Node.js)
 
 ### Step-by-Step Setup
 
-#### 1. Start the Databases
+#### 1. Setup the Databases
 
-Navigate to the backend directory and start Docker containers:
+**PostgreSQL:**
 
 ```bash
-cd backend/apinexus
-docker compose up -d
+# Connect to PostgreSQL
+psql -U postgres
+
+# Create database and user
+CREATE DATABASE nexuspay;
+CREATE USER nexuspay WITH PASSWORD 'nexuspay_dev';
+GRANT ALL PRIVILEGES ON DATABASE nexuspay TO nexuspay;
+
+# Exit psql
+\q
 ```
 
-This will start:
-- **PostgreSQL** on port 5432 (stores users, cards, subscriptions, bills)
-- **MongoDB** on port 27017 (stores transaction data)
-- **Redis** on port 6379 (for caching)
+**MongoDB:**
 
-**Verify containers are running:**
 ```bash
-docker ps
+# Connect to MongoDB
+mongosh
+
+# Create user with permissions
+use admin
+db.createUser({
+  user: "nexuspay",
+  pwd: "nexuspay_dev",
+  roles: [
+    { role: "readWrite", db: "nexuspay_transactions" },
+    { role: "dbAdmin", db: "nexuspay_transactions" }
+  ]
+})
+
+# Exit mongosh
+exit
 ```
 
-You should see three healthy containers: `nexuspay-postgres`, `nexuspay-mongo`, and `nexuspay-redis`.
+**Verify database connections:**
+
+```bash
+# Test PostgreSQL
+psql -U nexuspay -d nexuspay -h localhost
+# Should connect successfully, then type \q to exit
+
+# Test MongoDB
+mongosh "mongodb://nexuspay:nexuspay_dev@localhost:27017/nexuspay_transactions"
+# Should connect successfully, then type exit
+```
+
+The databases will be automatically initialized with the required tables/collections when the backend starts.
 
 #### 2. Start the Backend API Server
 

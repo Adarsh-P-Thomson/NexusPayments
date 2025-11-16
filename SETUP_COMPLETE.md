@@ -6,16 +6,16 @@ This document summarizes all the changes made to get NexusPay fully operational.
 
 ### ✅ Issues Fixed
 
-1. **Docker Compose Configuration**
-   - Fixed database credentials (nexuspay/nexuspay_dev)
-   - Added proper health checks
-   - Configured persistent volumes
-   - Added initialization scripts
+1. **Database Configuration**
+   - PostgreSQL configured for local installation (port 5432)
+   - MongoDB configured for local installation (port 27017)
+   - Database credentials: nexuspay/nexuspay_dev
+   - Removed Docker dependencies for simpler local development
 
 2. **Database Setup**
    - PostgreSQL now stores: users, card_details, subscription_plans, user_subscriptions, bills
    - MongoDB stores: transactions with sample data
-   - Both databases auto-initialize on first run
+   - Both databases auto-initialize on first run when backend starts
 
 3. **Card Management Added**
    - New CardDetail entity for storing payment cards
@@ -36,18 +36,51 @@ This document summarizes all the changes made to get NexusPay fully operational.
 6. **Dependencies Fixed**
    - Removed problematic Spring Session dependencies
    - Backend now starts cleanly
-   - All connections working
+   - All connections working with local databases
 
-7. **Documentation Added**
-   - `RUNNING_GUIDE.md` - Complete setup instructions
-   - `backend/apinexus/README.md` - Full API documentation
-   - `start-nexuspay.sh` - Automated startup script
+7. **Documentation Updated**
+   - `RUNNING_GUIDE.md` - Complete setup instructions for local databases
+   - `QUICKSTART.md` - Fast setup guide without Docker
+   - `SETUP.md` - Detailed installation guide for all platforms
+   - All Docker references removed from documentation
 
 ## 🚀 How to Start
 
-### Quick Start (Automated)
+### Quick Start
+
+**1. Setup Local Databases:**
+
 ```bash
-./start-nexuspay.sh
+# PostgreSQL
+psql -U postgres
+CREATE DATABASE nexuspay;
+CREATE USER nexuspay WITH PASSWORD 'nexuspay_dev';
+GRANT ALL PRIVILEGES ON DATABASE nexuspay TO nexuspay;
+\q
+
+# MongoDB
+mongosh
+use admin
+db.createUser({
+  user: "nexuspay",
+  pwd: "nexuspay_dev",
+  roles: [{ role: "readWrite", db: "nexuspay_transactions" }]
+})
+exit
+```
+
+**2. Start Backend:**
+```bash
+cd backend/apinexus
+mvn spring-boot:run
+```
+
+**3. Start Frontend:**
+```bash
+cd frontend/nexus
+npm install
+npm run dev
+```
 ```
 
 ### Manual Start

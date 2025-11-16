@@ -6,9 +6,10 @@ Get your subscription and payment processing system up and running in 5 minutes!
 
 Make sure you have:
 - ✅ Java 17 or higher: `java -version`
-- ✅ Node.js 16 or higher: `node -v`
+- ✅ Node.js 18 or higher: `node -v`
 - ✅ Maven 3.6 or higher: `mvn -v`
-- ✅ Docker (optional but recommended): `docker -v`
+- ✅ PostgreSQL 12+ installed and running locally
+- ✅ MongoDB 4.4+ installed and running locally
 
 ---
 
@@ -21,36 +22,41 @@ cd NexusPayments
 
 ---
 
-## Step 2: Start Databases
+## Step 2: Setup Databases
 
-### Option A: Using Docker (Recommended)
+### PostgreSQL Setup
 
-```bash
-cd backend/apinexus
-docker-compose up -d
-```
-
-This starts PostgreSQL, MongoDB, and Redis automatically.
-
-### Option B: Manual Setup
-
-If not using Docker, ensure you have PostgreSQL and MongoDB installed and running:
-
-**PostgreSQL:**
 ```sql
+-- Connect to PostgreSQL (e.g., psql -U postgres)
 CREATE DATABASE nexuspay;
 CREATE USER nexuspay WITH PASSWORD 'nexuspay_dev';
 GRANT ALL PRIVILEGES ON DATABASE nexuspay TO nexuspay;
 ```
 
-**MongoDB:**
+### MongoDB Setup
+
 ```javascript
+// Connect to MongoDB (e.g., mongosh)
 use admin
 db.createUser({
   user: "nexuspay",
   pwd: "nexuspay_dev",
   roles: [{ role: "readWrite", db: "nexuspay_transactions" }]
 })
+```
+
+### Verify Database Connections
+
+**PostgreSQL:**
+```bash
+psql -U nexuspay -d nexuspay -h localhost
+# Should connect successfully
+```
+
+**MongoDB:**
+```bash
+mongosh "mongodb://nexuspay:nexuspay_dev@localhost:27017/nexuspay_transactions"
+# Should connect successfully
 ```
 
 ---

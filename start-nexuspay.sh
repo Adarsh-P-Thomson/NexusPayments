@@ -35,12 +35,19 @@ print_info() {
 # Check prerequisites
 echo "Checking prerequisites..."
 
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    print_error "Docker is not installed. Please install Docker first."
+# Check PostgreSQL
+if ! command -v psql &> /dev/null; then
+    print_error "PostgreSQL is not installed. Please install PostgreSQL 12+ first."
     exit 1
 fi
-print_status "Docker is installed"
+print_status "PostgreSQL is installed"
+
+# Check MongoDB
+if ! command -v mongosh &> /dev/null && ! command -v mongo &> /dev/null; then
+    print_error "MongoDB is not installed. Please install MongoDB 4.4+ first."
+    exit 1
+fi
+print_status "MongoDB is installed"
 
 # Check Java
 if ! command -v java &> /dev/null; then
@@ -63,7 +70,7 @@ print_status "Maven is installed"
 
 # Check Node.js
 if ! command -v node &> /dev/null; then
-    print_error "Node.js is not installed. Please install Node.js 16+ first."
+    print_error "Node.js is not installed. Please install Node.js 18+ first."
     exit 1
 fi
 print_status "Node.js is installed"
@@ -76,28 +83,52 @@ fi
 print_status "npm is installed"
 
 echo ""
-echo "Starting NexusPay services..."
+echo "Checking database connectivity..."
 echo ""
 
-# 1. Start Docker containers
-print_info "Starting databases (PostgreSQL, MongoDB, Redis)..."
-cd "$PROJECT_ROOT/backend/apinexus"
-
-# Check if containers are already running
-if docker ps | grep -q "nexuspay-"; then
-    print_info "Docker containers are already running. Restarting..."
-    docker compose down
+# Check PostgreSQL connection
+print_info "Checking PostgreSQL connection..."
+if psql -U nexuspay -d nexuspay -h localhost -c "SELECT 1" &> /dev/null; then
+    print_status "PostgreSQL is accessible"
+else
+    print_error "Cannot connect to PostgreSQL. Please ensure:"
+    echo "  1. PostgreSQL is running (e.g., brew services start postgresql or sudo systemctl start postgresql)"
+    echo "  2. Database 'nexuspay' exists"
+    echo "  3. User 'nexuspay' exists with password 'nexuspay_dev'"
+    echo ""
+    echo "To setup, run:"
+    echo "  psql -U postgres"
+    echo "  CREATE DATABASE nexuspay;"
+    echo "  CREATE USER nexuspay WITH PASSWORD 'nexuspay_dev';"
+    echo "  GRANT ALL PRIVILEGES ON DATABASE nexuspay TO nexuspay;"
+    exit 1
 fi
 
-docker compose up -d
+# Check MongoDB connection
+print_info "Checking MongoDB connection..."
+if command -v mongosh &> /dev/null; then
+    MONGO_CMD="mongosh"
+else
+    MONGO_CMD="mongo"
+fi
 
-# Wait for databases to be healthy
-print_info "Waiting for databases to be ready..."
-sleep 10
+if $MONGO_CMD "mongodb://nexuspay:nexuspay_dev@localhost:27017/nexuspay_transactions" --eval "db.version()" &> /dev/null; then
+    print_status "MongoDB is accessible"
+else
+    print_error "Cannot connect to MongoDB. Please ensure:"
+    echo "  1. MongoDB is running (e.g., brew services start mongodb-community or sudo systemctl start mongod)"
+    echo "  2. User 'nexuspay' exists with access to 'nexuspay_transactions' database"
+    echo ""
+    echo "To setup, run:"
+    echo "  $MONGO_CMD"
+    echo "  use admin"
+    echo "  db.createUser({user: 'nexuspay', pwd: 'nexuspay_dev', roles: [{role: 'readWrite', db: 'nexuspay_transactions'}]})"
+    exit 1
+fi
 
-# Check database health
-if docker ps | grep -q "healthy.*nexuspay-postgres" && docker ps | grep -q "healthy.*nexuspay-mongo"; then
-    print_status "Databases are healthy and ready"
+echo ""
+echo "Starting NexusPay services..."
+echo ""
 else
     print_error "Databases failed to start properly. Check 'docker ps' for status."
     exit 1

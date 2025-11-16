@@ -60,34 +60,14 @@ The current implementation includes a **complete subscription and payment proces
 
 ## 🚦 Quick Start
 
-### Option 1: Using the Automated Startup Script (Fastest!)
-
-```bash
-git clone https://github.com/Adarsh-P-Thomson/NexusPayments.git
-cd NexusPayments
-./start-nexuspay.sh
-```
-
-This script automatically:
-- ✅ Checks all prerequisites (Docker, Java, Maven, Node.js)
-- ✅ Starts databases with Docker (PostgreSQL, MongoDB, Redis)
-- ✅ Builds and starts the backend API server
-- ✅ Initializes sample data (users, plans, transactions)
-- ✅ Installs and starts the frontend
-
-Then open **http://localhost:5173** and start using NexusPay!
-
-### Option 2: Manual Setup
-
-#### Prerequisites
+### Prerequisites
 - Java 17+
-- Node.js 16+
-- PostgreSQL 12+
-- MongoDB 4.4+
+- Node.js 18+
+- PostgreSQL 12+ (running locally)
+- MongoDB 4.4+ (running locally)
 - Maven 3.6+
-- Docker & Docker Compose (recommended)
 
-#### Setup Instructions
+### Setup Instructions
 
 1. **Clone the repository**
    ```bash
@@ -95,17 +75,60 @@ Then open **http://localhost:5173** and start using NexusPay!
    cd NexusPayments
    ```
 
-2. **Start databases** (using Docker Compose)
-   ```bash
-   cd backend/apinexus
-   docker compose up -d
+2. **Configure local databases**
+   
+   **PostgreSQL Setup:**
+   ```sql
+   CREATE DATABASE nexuspay;
+   CREATE USER nexuspay WITH PASSWORD 'nexuspay_dev';
+   GRANT ALL PRIVILEGES ON DATABASE nexuspay TO nexuspay;
    ```
 
-3. **Start backend**
+   **MongoDB Setup:**
+   ```javascript
+   use admin
+   db.createUser({
+     user: "nexuspay",
+     pwd: "nexuspay_dev",
+     roles: [{ role: "readWrite", db: "nexuspay_transactions" }]
+   })
+   ```
+
+3. **Update application configuration** (if needed)
+   
+   Edit `backend/apinexus/src/main/resources/application.properties` to match your local database settings:
+   ```properties
+   # PostgreSQL
+   spring.datasource.url=jdbc:postgresql://localhost:5432/nexuspay
+   spring.datasource.username=nexuspay
+   spring.datasource.password=nexuspay_dev
+   
+   # MongoDB
+   spring.data.mongodb.uri=mongodb://nexuspay:nexuspay_dev@localhost:27017/nexuspay_transactions
+   ```
+
+4. **Start the backend**
    ```bash
    cd backend/apinexus
    mvn spring-boot:run
    ```
+   
+   Wait for: `Started ApinexusApplication in X seconds`
+   
+   Backend API will be available at: **http://localhost:8080**
+
+5. **Start the frontend**
+   ```bash
+   cd frontend/nexus
+   npm install
+   npm run dev
+   ```
+   
+   Frontend will be available at: **http://localhost:5173**
+
+6. **Initialize sample data**
+   
+   Open http://localhost:5173 and click **"Initialize Data"** in the navigation menu to create sample users, plans, and transactions.
    Backend runs on `http://localhost:8080`
 
 4. **Initialize sample data**

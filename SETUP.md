@@ -15,14 +15,14 @@ This comprehensive guide walks you through setting up the complete NexusPay deve
 #### **Operating System Support**
 - **macOS**: 10.15+ (Catalina or newer)
 - **Linux**: Ubuntu 20.04+, CentOS 8+, or equivalent distributions
-- **Windows**: Windows 10/11 with WSL2 (recommended) or native support
+- **Windows**: Windows 10/11
 
 ### **Required Software Versions**
 
 | Component | Minimum Version | Recommended | Notes |
 |-----------|-----------------|-------------|-------|
-| **Docker** | 20.10+ | 24.0+ | Container platform |
-| **Docker Compose** | 2.0+ | 2.20+ | Multi-container orchestration |
+| **PostgreSQL** | 12.0+ | 15.0+ | Relational database |
+| **MongoDB** | 4.4+ | 6.0+ | Document database |
 | **Java** | OpenJDK 17 | OpenJDK 21 | Backend runtime |
 | **Maven** | 3.6+ | 3.9+ | Java build tool |
 | **Node.js** | 18.0+ | 20.0+ | Frontend runtime |
@@ -39,22 +39,23 @@ This comprehensive guide walks you through setting up the complete NexusPay deve
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install all required tools
-brew install openjdk@17 maven node docker git
-brew install --cask docker
+brew install openjdk@17 maven node postgresql mongodb-community git
 
 # Set JAVA_HOME environment variable
 echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 17)' >> ~/.zshrc
 echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 
-# Start Docker Desktop
-open /Applications/Docker.app
+# Start PostgreSQL and MongoDB services
+brew services start postgresql
+brew services start mongodb-community
 
 # Verify installations
-java --version    # Should show OpenJDK 17+
-mvn --version     # Should show Maven 3.6+
-node --version    # Should show Node 18+
-docker --version  # Should show Docker 20.10+
+java --version       # Should show OpenJDK 17+
+mvn --version        # Should show Maven 3.6+
+node --version       # Should show Node 18+
+psql --version       # Should show PostgreSQL 12+
+mongod --version     # Should show MongoDB 4.4+
 ```
 
 #### **Option 2: Manual Installation**
@@ -72,7 +73,8 @@ sudo ln -s /opt/apache-maven-3.9.4 /opt/maven
 curl -O https://nodejs.org/dist/v20.8.0/node-v20.8.0.pkg
 # Open and run the installer
 
-# Download Docker Desktop from https://www.docker.com/products/docker-desktop/
+# Download PostgreSQL from https://www.postgresql.org/download/macosx/
+# Download MongoDB from https://www.mongodb.com/try/download/community
 ```
 
 ### **Ubuntu/Debian Installation**
@@ -91,13 +93,31 @@ sudo apt install maven
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Install Docker and Docker Compose
-sudo apt-get install ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+# Install PostgreSQL
+sudo apt install postgresql postgresql-contrib
 
-echo \
+# Install MongoDB
+wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+
+# Install Git
+sudo apt install git
+
+# Start database services
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# Verify installations
+java --version       # Should show OpenJDK 17+
+mvn --version        # Should show Maven 3.6+
+node --version       # Should show Node 18+
+psql --version       # Should show PostgreSQL 12+
+mongod --version     # Should show MongoDB 4.4+
+```
   "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
